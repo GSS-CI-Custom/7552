@@ -1,0 +1,182 @@
+﻿Program.Sub.ScreenSU.Start
+Gui.Form..Create(BaseForm)
+Gui.Form..Caption("POSITIVE PAY ACCT NO")
+Gui.Form..Size(343,146)
+Gui.Form..MinX(0)
+Gui.Form..MinY(0)
+Gui.Form..Position(0,0)
+Gui.Form..AlwaysOnTop(False)
+Gui.Form..FontName("Tahoma")
+Gui.Form..FontSize(8.25)
+Gui.Form..ControlBox(True)
+Gui.Form..MaxButton(True)
+Gui.Form..MinButton(True)
+Gui.Form..MousePointer(0)
+Gui.Form..Moveable(True)
+Gui.Form..Sizeable(True)
+Gui.Form..ShowInTaskBar(True)
+Gui.Form..TitleBar(True)
+Gui.Form..Event(UnLoad,Form_UnLoad)
+Gui.Form.lbl1.Create(Label,"Account Number",True,79,13,0,19,17,True,0,"Tahoma",8.25,,0,0)
+Gui.Form.lbl1.BorderStyle(0)
+Gui.Form.txtAcct.Create(TextBox,"",True,202,20,0,16,41,True,0,"Tahoma",8.25,,1)
+Gui.Form.txtAcct.MaxLength(50)
+Gui.Form.txtAcct.Event(GotFocus,txtAcct_GotFocus)
+Gui.Form.cmdSave.Create(Button)
+Gui.Form.cmdSave.Enabled(True)
+Gui.Form.cmdSave.Visible(True)
+Gui.Form.cmdSave.Zorder(0)
+Gui.Form.cmdSave.Size(75,23)
+Gui.Form.cmdSave.Position(19,82)
+Gui.Form.cmdSave.Caption("Save")
+Gui.Form.cmdSave.FontName("Tahoma")
+Gui.Form.cmdSave.FontSize(8.25)
+Gui.Form.cmdSave.Event(Click,cmdSave_Click)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'Developer: Angel Tudon
+'Customer: Steel Fab, Inc
+'Ticket: https://www.gss-service.com/Calls/CallEditInternalOpen/1437215
+'Quote: 14674-0
+'This script is a maintenance menu for for ARC 7552. Aids in the input and storage of the account number to be used in the Check Register export file.
+
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+
+Function.Intrinsic.UI.UsePixels ' Allows you to use Pixels instead of Twips throughout
+
+F.Intrinsic.Control.CallSub(Get_Acct)
+
+Gui.Form..Show
+Gui.Form..AlwaysOnTop(True)
+Gui.Form..AlwaysOnTop(False)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_7201_Positive_Pay_Maint.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(form_unload)
+Function.Intrinsic.Control.EndIf
+Program.Sub.Main.End
+
+Program.Sub.Form_UnLoad.Start
+F.Intrinsic.Control.SetErrorHandler("Form_UnLoad_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Form_UnLoad_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.Control.End
+Function.Intrinsic.Control.EndIf
+Program.Sub.Form_UnLoad.End
+
+Program.Sub.txtAcct_GotFocus.Start
+F.Intrinsic.Control.SetErrorHandler("txtAcct_GotFocus_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+
+Gui.Form.txtAcct.SelectAll
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("txtAcct_GotFocus_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_7201_Positive_Pay_Maint.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(form_unload)
+Function.Intrinsic.Control.EndIf
+Program.Sub.txtAcct_GotFocus.End
+
+Program.Sub.cmdSave_Click.Start
+F.Intrinsic.Control.SetErrorHandler("cmdSave_Click_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+V.Local.sAcct.Declare(String,"")
+V.Local.sSql.Declare(String,"")
+
+F.ODBC.Connection!Conx.OpenCompanyConnection
+
+F.ODBC.Connection!Conx.ExecuteAndReturn("Select rtrim(Acct_No) From GCG_7201_PositivePay",V.Local.sAcct)
+
+F.Intrinsic.Control.If(V.Local.sAcct,=,"")
+	V.Local.sAcct.Set(V.Screen.Form!txtAcct.Text)
+	V.Local.sAcct.Set(V.Local.sAcct.Trim)
+	F.Intrinsic.Control.If(V.Local.sAcct.Trim,<>,"")
+		F.Intrinsic.String.Build("Insert Into GCG_7201_PositivePay Values('{0}')",V.Local.sAcct,V.Local.sSql)
+		F.ODBC.Connection!Conx.Execute(V.Local.sSql)
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.Else
+	V.Local.sAcct.Set(V.Screen.Form!txtAcct.Text)
+	V.Local.sAcct.Set(V.Local.sAcct.Trim)
+	F.Intrinsic.Control.If(V.Local.sAcct.Trim,<>,"")
+		F.Intrinsic.String.Build("Update GCG_7201_PositivePay Set Acct_No = '{0}'",V.Local.sAcct,V.Local.sSql)
+		F.ODBC.Connection!Conx.Execute(V.Local.sSql)
+	F.Intrinsic.Control.Else
+		F.ODBC.Connection!Conx.Execute("Delete From GCG_7201_PositivePay")
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndIf
+
+F.ODBC.Connection!Conx.Close
+
+F.Intrinsic.UI.Msgbox("Account Number Saved")
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("cmdSave_Click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_7201_Positive_Pay_Maint.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(form_unload)
+Function.Intrinsic.Control.EndIf
+Program.Sub.cmdSave_Click.End
+
+Program.Sub.Get_Acct.Start
+F.Intrinsic.Control.SetErrorHandler("Get_Acct_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+V.Local.sAcct.Declare(String,"")
+V.Local.bRet.Declare(Boolean,False)
+
+F.ODBC.Connection!Conx.OpenCompanyConnection
+
+F.ODBC.Connection!Conx.TableExists("GCG_7201_PositivePay",V.Local.bRet)
+
+F.Intrinsic.Control.If(V.Local.bRet,=,False)
+	F.ODBC.Connection!Conx.Execute("CREATE TABLE GCG_7201_PositivePay(Acct_No CHAR(50));")
+F.Intrinsic.Control.Else
+	F.ODBC.Connection!Conx.ExecuteAndReturn("Select rtrim(Acct_No) From GCG_7201_PositivePay",V.Local.sAcct)
+	Gui.Form.txtAcct.Text(V.Local.sAcct)
+F.Intrinsic.Control.EndIf
+
+F.ODBC.Connection!Conx.Close
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Get_Acct_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_7201_Positive_Pay_Maint.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(form_unload)
+Function.Intrinsic.Control.EndIf
+Program.Sub.Get_Acct.End
+
+Program.Sub.Comments.Start
+${$5$}$20.1.8286.22461$}$1
+${$6$}$Angel$}$20240516172216045$}$KXl0r/FkrMYwb/r4ukQ87f+Hs/x2T/uribr9ekLFv9NROi1PqyXdckBNXDT5196KSp0yJyxHbqw=
+Program.Sub.Comments.End
